@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Continue",
+    "steps": [
+      {
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Resume last opened menu"
+            }
+          }
+        ],
+        "send": {
+          "callback": "continue:start"
+        }
+      }
+    ]
+  }
+]
