@@ -1,0 +1,16 @@
+[
+  {
+    "name": "Missing shared file is handled clearly",
+    "steps": [
+      {
+        "send": { "callback": "file:details:missing" },
+        "expect": [
+          {
+            "method": "editMessageText",
+            "payload": { "text": "The library is getting ready. Please try again shortly." }
+          }
+        ]
+      }
+    ]
+  }
+]

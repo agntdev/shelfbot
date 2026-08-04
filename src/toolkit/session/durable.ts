@@ -43,6 +43,8 @@ export interface WorkerEnv {
   BOT_TELEMETRY_URL?: string;
   BOT_TELEMETRY_SECRET?: string;
   BOT_TELEMETRY_SALT?: string;
+  ADMIN_CHAT_IDS?: string;
+  DEFAULT_SUBSCRIPTION_DAYS?: string;
 }
 
 interface Reminder {
@@ -151,6 +153,23 @@ export class ChatDO {
       list.push(rem);
       await this.state.storage.put("reminders", list);
       await this.rearm(list);
+      return new Response(null, { status: 204 });
+    }
+
+    // Generic, revision-checked durable records for application domain data.
+    // A caller selects a dedicated DO name, so this never mixes with sessions.
+    if (url.pathname === "/library/read" && request.method === "GET") {
+      const key = url.searchParams.get("key");
+      if (!key) return new Response("missing key", { status: 400 });
+      const value = await this.state.storage.get<unknown>(key);
+      return Response.json(value ?? null);
+    }
+    if (url.pathname === "/library/write" && request.method === "PUT") {
+      const body = await request.json() as { key?: string; expectedRevision?: number; value?: { revision?: number } };
+      if (!body.key || body.expectedRevision === undefined || !body.value) return new Response("invalid write", { status: 400 });
+      const current = await this.state.storage.get<{ revision?: number }>(body.key);
+      if ((current?.revision ?? 0) !== body.expectedRevision) return new Response("conflict", { status: 409 });
+      await this.state.storage.put(body.key, body.value);
       return new Response(null, { status: 204 });
     }
 

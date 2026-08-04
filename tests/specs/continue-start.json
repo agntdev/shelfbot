@@ -5,9 +5,9 @@
       {
         "expect": [
           {
-            "method": "sendMessage",
+            "method": "editMessageText",
             "payload": {
-              "text": "Resume last opened menu"
+              "text": "The library is getting ready. Please try again shortly."
             }
           }
         ],

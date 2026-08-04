@@ -1,17 +1,16 @@
 import { Composer } from "grammy";
+import type { Ctx } from "../bot.js";
+import { LibraryUnavailableError, readLibrary, userId } from "../library-data.js";
+import { inlineButton, inlineKeyboard, registerMainMenuItem } from "../toolkit/index.js";
 
-// SCAFFOLD — generated from the bot blueprint BEFORE the agent runs.
-// Keep a LIVE registration (.command / .callbackQuery / …) so this feature is
-// never an empty stub. Replace the reply body with real logic + copy; if you
-// change the user-facing text, update tests/specs to match EXACTLY.
-// Do NOT rewrite src/bot.ts — buildBot() already auto-loads this module.
-// Menu: wire this into /start via registerMainMenuItem({ label: "Favorites", data: "favorites:start" }) if the toolkit exposes it.
-
-const composer = new Composer();
-
+registerMainMenuItem({ label: "Favorites", data: "favorites:start", order: 30 });
+const composer = new Composer<Ctx>();
 composer.callbackQuery("favorites:start", async (ctx) => {
   await ctx.answerCallbackQuery();
-  await ctx.reply("View favorite files");
+  try {
+    const state = await readLibrary(ctx);
+    const files = (state.users[userId(ctx)]?.favorites ?? []).map((id) => state.files[id]).filter(Boolean);
+    await ctx.editMessageText(files.length ? "Your favorites" : "No favorites yet — open a file and tap Add favorite.", { reply_markup: inlineKeyboard([...files.map((file) => [inlineButton(file.title, `file:details:${file.id}`)]), [inlineButton("← Main menu", "menu:main")]]) });
+  } catch (error) { await ctx.editMessageText(error instanceof LibraryUnavailableError ? "The library is getting ready. Please try again shortly." : "Couldn't load your favorites. Please try again."); }
 });
-
 export default composer;

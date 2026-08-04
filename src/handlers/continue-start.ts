@@ -1,17 +1,24 @@
 import { Composer } from "grammy";
+import type { Ctx } from "../bot.js";
+import { LibraryUnavailableError, readLibrary } from "../library-data.js";
+import { menuView } from "../library-ui.js";
+import { registerMainMenuItem } from "../toolkit/index.js";
 
-// SCAFFOLD — generated from the bot blueprint BEFORE the agent runs.
-// Keep a LIVE registration (.command / .callbackQuery / …) so this feature is
-// never an empty stub. Replace the reply body with real logic + copy; if you
-// change the user-facing text, update tests/specs to match EXACTLY.
-// Do NOT rewrite src/bot.ts — buildBot() already auto-loads this module.
-// Menu: wire this into /start via registerMainMenuItem({ label: "Continue", data: "continue:start" }) if the toolkit exposes it.
-
-const composer = new Composer();
-
+registerMainMenuItem({ label: "Continue", data: "continue:start", order: 50 });
+const composer = new Composer<Ctx>();
 composer.callbackQuery("continue:start", async (ctx) => {
   await ctx.answerCallbackQuery();
-  await ctx.reply("Resume last opened menu");
+  try {
+    const state = await readLibrary(ctx);
+    const user = state.users[String(ctx.from?.id ?? ctx.chat?.id)];
+    if (!user?.lastOpenedMenu) {
+      await ctx.editMessageText("You haven't opened a section yet — start with the library.", { reply_markup: { inline_keyboard: [[{ text: "📚 Browse Library", callback_data: "browse:start" }], [{ text: "← Main menu", callback_data: "menu:main" }]] } });
+      return;
+    }
+    const view = menuView(state, user.lastOpenedMenu, 0);
+    await ctx.editMessageText(view.text, { reply_markup: view.keyboard });
+  } catch (error) {
+    await ctx.editMessageText(error instanceof LibraryUnavailableError ? "The library is getting ready. Please try again shortly." : "Couldn't resume that section. Open the library again.");
+  }
 });
-
 export default composer;

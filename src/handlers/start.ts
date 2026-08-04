@@ -1,6 +1,8 @@
 import { Composer } from "grammy";
 import type { Ctx } from "../bot.js";
 import { mainMenuKeyboard } from "../toolkit/index.js";
+import { ensureUser } from "../library-data.js";
+import { sendDetails } from "./file-details.js";
 
 // The /start handler renders the bot's MAIN MENU — the primary way users operate
 // a button-first bot. A feature adds its own button by calling
@@ -9,9 +11,15 @@ import { mainMenuKeyboard } from "../toolkit/index.js";
 // file to add a feature. Send ONE message — no placeholder line above the menu.
 const composer = new Composer<Ctx>();
 
-const WELCOME = "👋 Welcome! Tap a button below to get started.";
+const WELCOME = "Welcome to LibraryBot. Choose how you'd like to explore the collection.";
 
 composer.command("start", async (ctx) => {
+  // Registration is best-effort while a Worker is still provisioning its store.
+  try { await ensureUser(ctx); } catch { /* The menu remains useful during provisioning. */ }
+  const payload = typeof ctx.match === "string" ? ctx.match : "";
+  if (payload.startsWith("file_")) {
+    if (await sendDetails(ctx, payload.slice(5))) return;
+  }
   await ctx.reply(WELCOME, { reply_markup: mainMenuKeyboard() });
 });
 
