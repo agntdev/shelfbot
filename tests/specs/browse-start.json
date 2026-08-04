@@ -5,9 +5,9 @@
       {
         "expect": [
           {
-            "method": "sendMessage",
+            "method": "editMessageText",
             "payload": {
-              "text": "Open the main library menu"
+              "text": "The library is getting ready. Please try again shortly."
             }
           }
         ],

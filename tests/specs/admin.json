@@ -7,7 +7,7 @@
           {
             "method": "sendMessage",
             "payload": {
-              "text": "Open the admin panel for content and user management"
+              "text": "Owner access isn't set up yet."
             }
           }
         ],

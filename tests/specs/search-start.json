@@ -5,9 +5,9 @@
       {
         "expect": [
           {
-            "method": "sendMessage",
+            "method": "editMessageText",
             "payload": {
-              "text": "Open the search interface"
+              "text": "Send a word or phrase to search file titles and descriptions."
             }
           }
         ],

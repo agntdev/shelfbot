@@ -14,6 +14,7 @@
 
 /** Common platform names for env keys of kind admin_id. */
 export const ADMIN_ID_ENV_KEYS = [
+  "ADMIN_CHAT_IDS",
   "ADMIN_CHAT_ID",
   "OWNER_ADMIN_ID",
   "OWNER_TELEGRAM_ID",
@@ -31,7 +32,8 @@ export type OwnerAwareCtx = {
   env?: Record<string, unknown> | null;
   from?: { id: number } | undefined;
   chat?: { id: number } | undefined;
-  reply: (text: string, ...args: unknown[]) => unknown | Promise<unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  reply: (text: string, ...args: any[]) => unknown | Promise<unknown>;
   answerCallbackQuery?: (
     opts?: { text?: string; show_alert?: boolean },
   ) => unknown | Promise<unknown>;
@@ -46,6 +48,18 @@ function coerceId(value: unknown): string | undefined {
     if (trimmed !== "") return trimmed;
   }
   return undefined;
+}
+
+/** All configured notification chats. ADMIN_CHAT_IDS may be a comma-separated list. */
+export function adminChatIds(ctx: { env?: Record<string, unknown> | null }): string[] {
+  const env = ctx.env ?? nodeProcessEnv();
+  const raw = env?.ADMIN_CHAT_IDS;
+  if (typeof raw === "string") {
+    const ids = raw.split(",").map((id) => id.trim()).filter(Boolean);
+    if (ids.length > 0) return [...new Set(ids)];
+  }
+  const one = readAdminFromEnv(env);
+  return one ? [one] : [];
 }
 
 function readAdminFromEnv(
@@ -72,9 +86,7 @@ function nodeProcessEnv(): Record<string, unknown> | undefined {
 export function adminChatId(ctx: {
   env?: Record<string, unknown> | null;
 }): string | undefined {
-  return (
-    readAdminFromEnv(ctx.env ?? undefined) ?? readAdminFromEnv(nodeProcessEnv())
-  );
+  return adminChatIds(ctx)[0];
 }
 
 /** True when the update's user (or private chat) matches the injected owner id. */
@@ -83,11 +95,11 @@ export function isOwner(ctx: {
   from?: { id: number } | undefined;
   chat?: { id: number } | undefined;
 }): boolean {
-  const admin = adminChatId(ctx);
-  if (admin === undefined) return false;
-  if (ctx.from?.id !== undefined && String(ctx.from.id) === admin) return true;
+  const admins = adminChatIds(ctx);
+  if (admins.length === 0) return false;
+  if (ctx.from?.id !== undefined && admins.includes(String(ctx.from.id))) return true;
   // Private chats: chat id equals user id — notify targets often use chat id.
-  if (ctx.chat?.id !== undefined && String(ctx.chat.id) === admin) return true;
+  if (ctx.chat?.id !== undefined && admins.includes(String(ctx.chat.id))) return true;
   return false;
 }
 
