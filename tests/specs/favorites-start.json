@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Favorites",
+    "steps": [
+      {
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "View favorite files"
+            }
+          }
+        ],
+        "send": {
+          "callback": "favorites:start"
+        }
+      }
+    ]
+  }
+]
